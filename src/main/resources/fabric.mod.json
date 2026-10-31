@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "id": "sentinel",
+  "id": "rocketscience",
   "version": "${version}",
-  "name": "Sentinel",
+  "name": "Rocket Science",
   "description": "A modular Fabric utility client with a tactical \"Command Panel\" interface.",
-  "authors": ["Sentinel contributors"],
+  "authors": ["Rocket Science contributors"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": {
-    "client": ["dev.sentinel.Sentinel"]
+    "client": ["dev.rocketscience.RocketScience"]
   },
-  "mixins": ["sentinel.mixins.json"],
+  "mixins": ["rocketscience.mixins.json"],
   "depends": {
     "fabricloader": ">=0.16.10",
     "minecraft": "~1.21.4",

@@ -1,4 +1,4 @@
-# Sentinel
+# Rocket Science
 
 A modular Fabric utility client for **Minecraft 1.21.4** with a tactical **"Command Panel"** interface:
 deep navy surfaces, electric blue accents, crimson highlights for combat and warnings.
@@ -16,8 +16,10 @@ deep navy surfaces, electric blue accents, crimson highlights for combat and war
 | World | **Player Finder** | Logs players entering/leaving render distance (name, XYZ, distance, time), toast/sound/chat alerts, last-known-position waypoints. Log shown in the **Players** panel. |
 | World | **Storage ESP** | Boxes and/or tracers on chests, trapped chests, barrels, shulkers, ender chests, hoppers and furnaces through walls. Per-type toggle + colour, fill/outline, opacity, range. |
 | Render | **Player ESP** | Box / 2D outline / glow modes, tracers, nametags (health + distance), colour by friend status or distance. |
+| Render | **Tracers** | Lines from the crosshair to players (friends blue), hostile mobs, passive mobs and dropped items. Per-type toggle + colour, body/head/feet target, range, distance fade. |
 | Render | **Free Cam** | Detached camera flight; your player stays still server-side. Optional interaction. Restores cleanly. |
 | Combat | **Aim Assist** | Eased (never snapped) aim toward the best target in an FOV cone. FOV, range, speed, priority, friends, players-only. |
+| Player | **Reach** | Extends entity (default 3.5) and block (default 5.0) reach. Servers verify distance, so large values get rejected or flagged. |
 | Player | **Auto Sprint** | Tiny example module. |
 | Misc | **HUD** | Gradient watermark, animated ArrayList, coords/FPS/facing, toasts. |
 | Misc | **ClickGUI** | Opens the Command Panel (**Right Shift**, rebindable). |
@@ -33,7 +35,10 @@ Also: friends system, `.`-prefixed commands, JSON profiles, bundled Roboto UI fo
   keybinds and list editors, all themed. Right-click a header to collapse a panel.
 * **Search bar** at the top - just start typing.
 * **Players** panel (Player Finder log, click a name to friend/unfriend) and **Friends** panel.
-* Mouse wheel pans all panels. Positions are saved per profile.
+* Panels auto-wrap into rows to fit your screen and can't be dragged or scrolled off it.
+  Scrolling over a panel moves that panel, scrolling over empty space moves all of them.
+  **↺ reset layout** (bottom-right) or `.gui reset` restores the default arrangement.
+  Positions are saved per profile.
 * **HUD**: blue-to-red watermark (top-left), ArrayList sorted by width with slide animations
   (top-right), coordinates incl. nether/overworld conversion, FPS and facing (bottom-left),
   toasts (bottom-right) with a **blue border for "on"** and **red for "off"**.
@@ -48,7 +53,7 @@ Requirements: **JDK 21**. Gradle is provided by the wrapper.
 ./gradlew build
 ```
 
-The mod jar is written to `build/libs/sentinel-1.0.0.jar`. Copy it, together with
+The mod jar is written to `build/libs/rocketscience-1.0.0.jar`. Copy it, together with
 [Fabric API](https://modrinth.com/mod/fabric-api) for 1.21.4, into `.minecraft/mods/` of a
 Fabric Loader 0.16.10+ installation.
 
@@ -80,6 +85,7 @@ readable Minecraft sources.
 | `.config save\|load\|delete\|list [name]` | Named profiles |
 | `.players [clear]` | Show/clear the Player Finder log |
 | `.prefix <symbol>` | Change the command prefix |
+| `.gui reset` | Reset ClickGUI panel positions |
 
 List settings accept `add <entry>` / `remove <entry>`:
 `.set basefinder blocks add minecraft:obsidian=0.5`.
@@ -87,13 +93,14 @@ List settings accept `add <entry>` / `remove <entry>`:
 ### Config files
 
 ```
-.minecraft/sentinel/
+.minecraft/rocketscience/
   client.json            active profile + prefix
   friends.json           global friend list
   profiles/<name>.json   module states, settings, keybinds and GUI layout
 ```
 
-The active profile is saved when the ClickGUI closes and when the game exits.
+The active profile is saved when the ClickGUI closes and when the game exits. A config folder
+from the client's old name (`.minecraft/sentinel/`) is moved over automatically on first launch.
 
 ### Base Finder scoring
 
@@ -109,8 +116,8 @@ can contain a target are scanned. **Scan Rate** controls chunks processed per ti
 ## Architecture
 
 ```
-dev.sentinel
-├── Sentinel.java              entrypoint: creates managers, wires Fabric API events
+dev.rocketscience
+├── RocketScience.java         entrypoint: creates managers, wires Fabric API events
 ├── module/                    Module base class, Category, ModuleManager
 ├── modules/<category>/        the modules themselves
 ├── setting/                   Setting<T> + Bool/Int/Double/Color/Enum/Keybind/StringList
@@ -122,7 +129,7 @@ dev.sentinel
 ├── render/                    Render3D (batched world shapes), Projection (world->screen),
 │                              Render2D (rounded rects, outlines, shadows), FontRenderer
 ├── util/                      ChatUtil, ColorUtil, KeyUtil, WorldUtil
-└── mixin/                     5 small mixins (see below)
+└── mixin/                     6 small mixins (see below)
 ```
 
 **Events**: ticks, world rendering, HUD rendering, chat, chunk load/unload, disconnect and shutdown
@@ -138,20 +145,21 @@ so a crashing module is logged and disabled instead of taking the game down.
 | `CameraMixin` | Free Cam: override camera position/rotation, render own body |
 | `EntityMixin` | Free Cam mouse look; Player ESP glow colour |
 | `MinecraftClientMixin` | Player ESP glow mode: force the outline shader for players |
+| `PlayerEntityMixin` | Reach: raise the local player's entity/block interaction range |
 
 ---
 
 ## Adding a module
 
-1. Create a class in `dev.sentinel.modules.<category>`:
+1. Create a class in `dev.rocketscience.modules.<category>`:
 
 ```java
-package dev.sentinel.modules.player;
+package dev.rocketscience.modules.player;
 
-import dev.sentinel.module.Category;
-import dev.sentinel.module.Module;
-import dev.sentinel.setting.BoolSetting;
-import dev.sentinel.setting.DoubleSetting;
+import dev.rocketscience.module.Category;
+import dev.rocketscience.module.Module;
+import dev.rocketscience.setting.BoolSetting;
+import dev.rocketscience.setting.DoubleSetting;
 
 /** Example: jump automatically while moving. */
 public class AutoJump extends Module {
@@ -214,13 +222,14 @@ Mojang renames rendering and input internals often. When porting, check these fi
 
 * `render/Render3D` - `ShaderProgramKeys`, `Tessellator#begin`, `BufferBuilder#endNullable`,
   `RenderSystem#getModelViewStack` (rendering was reworked in 1.21.5+).
+* `mixin/PlayerEntityMixin` - `getEntityInteractionRange` / `getBlockInteractionRange`.
 * `mixin/KeyboardInputMixin` - `Input#playerInput`, `movementForward/Sideways`
   (became `movementVector` in 1.21.5).
 * `mixin/KeyboardMixin` - `Keyboard#onKey` signature (changed in 1.21.9).
-* `Sentinel` - `HudRenderCallback` / `WorldRenderEvents` (replaced by newer Fabric APIs in 1.21.6+),
+* `RocketScience` - `HudRenderCallback` / `WorldRenderEvents` (replaced by newer Fabric APIs in 1.21.6+),
   `RenderTickCounter#getTickDelta` (renamed `getTickProgress` in 1.21.5).
 
 ## Credits
 
 UI font: [Roboto](https://github.com/googlefonts/roboto) (Apache License 2.0, see
-`src/main/resources/assets/sentinel/font/ROBOTO_LICENSE.txt`). Code: MIT, see `LICENSE`.
+`src/main/resources/assets/rocketscience/font/ROBOTO_LICENSE.txt`). Code: MIT, see `LICENSE`.
