@@ -4,8 +4,10 @@
   "package": "dev.rocketscience.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "BlockEntityRenderDispatcherMixin",
     "CameraMixin",
     "EntityMixin",
+    "EntityRenderDispatcherMixin",
     "KeyboardInputMixin",
     "KeyboardMixin",
     "MinecraftClientMixin",

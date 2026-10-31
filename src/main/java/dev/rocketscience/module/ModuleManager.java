@@ -4,6 +4,7 @@ import dev.rocketscience.RocketScience;
 import dev.rocketscience.modules.combat.AimAssist;
 import dev.rocketscience.modules.misc.ClickGuiModule;
 import dev.rocketscience.modules.misc.Hud;
+import dev.rocketscience.modules.misc.Performance;
 import dev.rocketscience.modules.player.AutoSprint;
 import dev.rocketscience.modules.player.Reach;
 import dev.rocketscience.modules.render.FreeCam;
@@ -42,6 +43,7 @@ public final class ModuleManager {
         register(new Reach());
         // Misc
         register(new Hud());
+        register(new Performance());
         register(new ClickGuiModule());
 
         modules.sort(Comparator.comparing(Module::getName));

@@ -21,6 +21,7 @@ deep navy surfaces, electric blue accents, crimson highlights for combat and war
 | Combat | **Aim Assist** | Eased (never snapped) aim toward the best target in an FOV cone. FOV, range, speed, priority, friends, players-only. |
 | Player | **Reach** | Extends entity (default 3.5) and block (default 5.0) reach. Servers verify distance, so large values get rejected or flagged. |
 | Player | **Auto Sprint** | Tiny example module. |
+| Misc | **Performance** | FPS boost: occlusion-culls entities and block entities (chests, signs, banners...) hidden behind walls, using budgeted, cached raycasts so it never spikes a frame. Optional **Fast Preset** (clouds off, no entity shadows, minimal particles, fast graphics, biome blend 0) restored when turned off. |
 | Misc | **HUD** | Gradient watermark, animated ArrayList, coords/FPS/facing, toasts. |
 | Misc | **ClickGUI** | Opens the Command Panel (**Right Shift**, rebindable). |
 
@@ -102,6 +103,13 @@ List settings accept `add <entry>` / `remove <entry>`:
 The active profile is saved when the ClickGUI closes and when the game exits. A config folder
 from the client's old name (`.minecraft/sentinel/`) is moved over automatically on first launch.
 
+### Performance tips
+
+The **Performance** module culls what vanilla still renders behind walls. For the biggest FPS gain
+also install [Sodium](https://modrinth.com/mod/sodium) (1.21.4 build), which replaces chunk
+rendering; the two complement each other. Culling raycasts only stop at full, solid, opaque blocks,
+so glass, leaves and slabs never hide anything. **Time Budget** caps the milliseconds spent per frame.
+
 ### Base Finder scoring
 
 Each entry is `id[=weight]` or `#tag[=weight]` (e.g. `minecraft:hopper=3`, `#minecraft:beds`).
@@ -129,7 +137,7 @@ dev.rocketscience
 ├── render/                    Render3D (batched world shapes), Projection (world->screen),
 │                              Render2D (rounded rects, outlines, shadows), FontRenderer
 ├── util/                      ChatUtil, ColorUtil, KeyUtil, WorldUtil
-└── mixin/                     6 small mixins (see below)
+└── mixin/                     8 small mixins (see below)
 ```
 
 **Events**: ticks, world rendering, HUD rendering, chat, chunk load/unload, disconnect and shutdown
@@ -146,6 +154,8 @@ so a crashing module is logged and disabled instead of taking the game down.
 | `EntityMixin` | Free Cam mouse look; Player ESP glow colour |
 | `MinecraftClientMixin` | Player ESP glow mode: force the outline shader for players |
 | `PlayerEntityMixin` | Reach: raise the local player's entity/block interaction range |
+| `EntityRenderDispatcherMixin` | Performance: skip entities hidden behind walls (optional injection) |
+| `BlockEntityRenderDispatcherMixin` | Performance: skip hidden block entities (optional injection) |
 
 ---
 
